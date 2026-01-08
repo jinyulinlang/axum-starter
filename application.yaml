@@ -1,0 +1,10 @@
+server:
+  port: 3001
+database:
+  host: localhost
+  port: 5432,
+  username: posgres,
+  password: 123456,
+  database: posgres,
+  schema: public,
+  timeout: 60,
