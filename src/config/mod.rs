@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::config::{database::DatabaseConfig, server::ServerConfig};
 
 mod database;
-mod server;
+pub mod server;
 
 static CONFIG: LazyLock<AppConfig> =
     LazyLock::new(|| AppConfig::load().expect("Failed to load config"));

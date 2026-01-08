@@ -31,4 +31,4 @@ tracing-subscriber = { version = "0.3.22", features = [
   "env-filter",
   "chrono",
 ] }
-num_cpu = "1.14.0"
+num_cpus = "1.0"
