@@ -1,13 +1,20 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, time::Duration};
 
 use anyhow::Ok;
 use axum::{
     Router,
-    extract::Request,
-    http::{method, request},
+    extract::{DefaultBodyLimit, Request},
+    http::{StatusCode, method, request},
 };
+use bytesize::ByteSize;
+use sea_orm::prelude::Time;
 use tokio::net::TcpListener;
-use tower_http::trace::{self, DefaultOnResponse, TraceLayer};
+use tower_http::{
+    cors::Any,
+    normalize_path::NormalizePathLayer,
+    timeout::TimeoutLayer,
+    trace::{self, DefaultOnResponse, TraceLayer},
+};
 
 use crate::{app::AppState, config::server::ServerConfig, latency::LatencyOnResponse};
 pub struct Server {
@@ -33,7 +40,24 @@ impl Server {
     }
 
     fn build_router(&self, state: AppState, router: Router<AppState>) -> axum::Router {
-        let layer = TraceLayer::new_for_http()
+        let timeout_layer =
+            TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(120));
+        let body_limit_layer = DefaultBodyLimit::max(ByteSize::mib(10).as_u64() as usize);
+        let cors_layer = tower_http::cors::CorsLayer::new()
+            .allow_origin(tower_http::cors::Any)
+            .allow_methods(vec![
+                method::Method::GET,
+                method::Method::POST,
+                method::Method::PUT,
+                method::Method::DELETE,
+            ])
+            .allow_headers(tower_http::cors::Any)
+            .allow_credentials(false)
+            .max_age(Duration::from_secs(3600 * 12));
+        // 末尾的 / 去掉
+        let normalize_layer = NormalizePathLayer::trim_trailing_slash();
+
+        let trace_layer = TraceLayer::new_for_http()
             .make_span_with(|request: &Request| {
                 let method = request.method();
                 let path = request.uri().path();
@@ -45,7 +69,11 @@ impl Server {
             .on_response(LatencyOnResponse);
         axum::Router::new()
             .merge(router)
-            .layer(layer)
+            .layer(timeout_layer)
+            .layer(body_limit_layer)
+            .layer(trace_layer)
+            .layer(cors_layer)
+            .layer(normalize_layer)
             .with_state(state)
     }
 }
