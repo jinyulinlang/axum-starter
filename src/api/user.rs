@@ -13,6 +13,7 @@ pub fn create_router() -> Router<AppState> {
 }
 
 #[debug_handler]
+// #[tracing::instrument(name = "get_users", fields(pay_method = "alipay"), skip(db))]
 async fn get_users(
     State(AppState { db }): State<AppState>,
 ) -> ApiResult<AppResponse<Vec<sys_user::Model>>> {

@@ -4,6 +4,7 @@ mod config;
 mod database;
 mod entity;
 mod error;
+mod latency;
 mod logger;
 mod response;
 mod server;
