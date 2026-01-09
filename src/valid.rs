@@ -1,7 +1,5 @@
-use axum::extract::{FromRequest, FromRequestParts};
+use axum::extract::{FromRequest, FromRequestParts, Request};
 use axum_valid::HasValidate;
-use serde::de;
-use validator::Validate;
 
 use crate::{error::ApiError, json::Json, path::Path, query::Query};
 
@@ -21,34 +19,47 @@ pub struct ValidQuery<T>(pub T);
 
 #[derive(Debug, Clone, Default)]
 pub struct ValidPath<T>(pub T);
+
+#[derive(Debug, Clone, Default)]
 pub struct ValidJson<T>(pub T);
+
+impl<S, T> FromRequest<S> for ValidJson<T>
+where
+    S: Send + Sync,
+    Valid<Json<T>>: FromRequest<S, Rejection = ApiError>,
+{
+    type Rejection = ApiError;
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        let json = Valid::from_request(req, state).await?;
+        Ok(ValidJson(json.0.0))
+    }
+}
+
 impl<S, T> FromRequestParts<S> for ValidPath<T>
 where
     S: Send + Sync,
-    Path<T>: FromRequestParts<S, Rejection = ApiError> + axum_valid::HasValidate,
-    <Path<T> as axum_valid::HasValidate>::Validate: Validate,
+    Valid<Path<T>>: FromRequestParts<S, Rejection = ApiError>,
 {
     type Rejection = ApiError;
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
         state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let path = axum_valid::Valid::<Path<T>>::from_request_parts(parts, state).await?;
+        let path = Valid::from_request_parts(parts, state).await?;
         Ok(ValidPath(path.0.0))
     }
 }
 impl<S, T> FromRequestParts<S> for ValidQuery<T>
 where
     S: Send + Sync,
-    Query<T>: FromRequestParts<S, Rejection = ApiError> + axum_valid::HasValidate,
-    <Query<T> as axum_valid::HasValidate>::Validate: Validate,
+    Valid<Query<T>>: FromRequestParts<S, Rejection = ApiError>,
 {
     type Rejection = ApiError;
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
         state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let query = axum_valid::Valid::<Query<T>>::from_request_parts(parts, state).await?;
+        let query = Valid::from_request_parts(parts, state).await?;
         Ok(ValidQuery(query.0.0))
     }
 }
