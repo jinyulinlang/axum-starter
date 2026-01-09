@@ -5,7 +5,7 @@ use crate::{
     error::ApiResult,
     query::Query,
     response::AppResponse,
-    valid::Valid,
+    valid::{Valid, ValidQuery},
 };
 use anyhow::Context;
 use axum::{Router, debug_handler, extract::State, routing::get};
@@ -32,10 +32,10 @@ pub struct UserQueryDTO {
 #[debug_handler]
 async fn find_page(
     State(AppState { db }): State<AppState>,
-    Valid(Query(UserQueryDTO {
+    ValidQuery(UserQueryDTO {
         keyword,
         pagination,
-    })): Valid<Query<UserQueryDTO>>,
+    }): ValidQuery<UserQueryDTO>,
 ) -> ApiResult<AppResponse<PageInfoData<sys_user::Model>>> {
     let paginate = SysUser::find()
         .apply_if(keyword.as_ref(), |query, keyword| {

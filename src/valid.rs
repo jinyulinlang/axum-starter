@@ -23,43 +23,77 @@ pub struct ValidPath<T>(pub T);
 #[derive(Debug, Clone, Default)]
 pub struct ValidJson<T>(pub T);
 
-impl<S, T> FromRequest<S> for ValidJson<T>
-where
-    S: Send + Sync,
-    Valid<Json<T>>: FromRequest<S, Rejection = ApiError>,
-{
-    type Rejection = ApiError;
-    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
-        let json = Valid::from_request(req, state).await?;
-        Ok(ValidJson(json.0.0))
-    }
+// impl<S, T> FromRequest<S> for ValidJson<T>
+// where
+//     S: Send + Sync,
+//     Valid<Json<T>>: FromRequest<S, Rejection = ApiError>,
+// {
+//     type Rejection = ApiError;
+//     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+//         let json = Valid::from_request(req, state).await?;
+//         Ok(ValidJson(json.0.0))
+//     }
+// }
+
+// impl<S, T> FromRequestParts<S> for ValidPath<T>
+// where
+//     S: Send + Sync,
+//     Valid<Path<T>>: FromRequestParts<S, Rejection = ApiError>,
+// {
+//     type Rejection = ApiError;
+//     async fn from_request_parts(
+//         parts: &mut axum::http::request::Parts,
+//         state: &S,
+//     ) -> Result<Self, Self::Rejection> {
+//         let path = Valid::from_request_parts(parts, state).await?;
+//         Ok(ValidPath(path.0.0))
+//     }
+// }
+// impl<S, T> FromRequestParts<S> for ValidQuery<T>
+// where
+//     S: Send + Sync,
+//     Valid<Query<T>>: FromRequestParts<S, Rejection = ApiError>,
+// {
+//     type Rejection = ApiError;
+//     async fn from_request_parts(
+//         parts: &mut axum::http::request::Parts,
+//         state: &S,
+//     ) -> Result<Self, Self::Rejection> {
+//         let query = Valid::from_request_parts(parts, state).await?;
+//         Ok(ValidQuery(query.0.0))
+//     }
+// }
+
+macro_rules! impl_from_request {
+    ($name:ident, $wrapper:ident,FromRequestParts) => {
+        impl<S, T> FromRequestParts<S> for $name<T>
+        where
+            S: Send + Sync,
+            Valid<$wrapper<T>>: FromRequestParts<S, Rejection = ApiError>,
+        {
+            type Rejection = ApiError;
+            async fn from_request_parts(
+                parts: &mut axum::http::request::Parts,
+                state: &S,
+            ) -> Result<Self, Self::Rejection> {
+                Ok($name(Valid::from_request_parts(parts, state).await?.0.0))
+            }
+        }
+    };
+    ($name:ident, $wrapper:ident,FromRequest) => {
+        impl<S, T> FromRequest<S> for $name<T>
+        where
+            S: Send + Sync,
+            Valid<$wrapper<T>>: FromRequest<S, Rejection = ApiError>,
+        {
+            type Rejection = ApiError;
+            async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+                Ok($name(Valid::from_request(req, state).await?.0.0))
+            }
+        }
+    };
 }
 
-impl<S, T> FromRequestParts<S> for ValidPath<T>
-where
-    S: Send + Sync,
-    Valid<Path<T>>: FromRequestParts<S, Rejection = ApiError>,
-{
-    type Rejection = ApiError;
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let path = Valid::from_request_parts(parts, state).await?;
-        Ok(ValidPath(path.0.0))
-    }
-}
-impl<S, T> FromRequestParts<S> for ValidQuery<T>
-where
-    S: Send + Sync,
-    Valid<Query<T>>: FromRequestParts<S, Rejection = ApiError>,
-{
-    type Rejection = ApiError;
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let query = Valid::from_request_parts(parts, state).await?;
-        Ok(ValidQuery(query.0.0))
-    }
-}
+impl_from_request!(ValidQuery, Query, FromRequestParts);
+impl_from_request!(ValidPath, Path, FromRequestParts);
+impl_from_request!(ValidJson, Json, FromRequest);
