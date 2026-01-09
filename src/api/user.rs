@@ -11,20 +11,24 @@ use axum::{
     extract::{Query, State},
     routing::get,
 };
+use axum_valid::Valid;
 use sea_orm::{
     ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait,
     sea_query::Mode,
 };
 use serde::Deserialize;
+use validator::Validate;
 
 pub fn create_router() -> Router<AppState> {
     Router::new().route("/users", get(get_users))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct UserQueryDTO {
     keyword: Option<String>,
+
+    #[validate(nested)]
     #[serde(flatten)]
     pagination: BasePageDTO,
 }
@@ -32,10 +36,10 @@ pub struct UserQueryDTO {
 #[debug_handler]
 async fn find_page(
     State(AppState { db }): State<AppState>,
-    Query(UserQueryDTO {
+    Valid(Query(UserQueryDTO {
         keyword,
         pagination,
-    }): Query<UserQueryDTO>,
+    })): Valid<Query<UserQueryDTO>>,
 ) -> ApiResult<AppResponse<PageInfoData<sys_user::Model>>> {
     let paginate = SysUser::find()
         .apply_if(keyword.as_ref(), |query, keyword| {
