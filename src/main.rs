@@ -4,6 +4,7 @@ mod common;
 mod config;
 mod database;
 mod entity;
+mod enumeration;
 mod error;
 mod json;
 mod latency;
@@ -13,7 +14,9 @@ mod query;
 mod response;
 mod serde;
 mod server;
+mod utils;
 mod valid;
+mod validation;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

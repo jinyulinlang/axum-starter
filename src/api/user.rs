@@ -1,22 +1,35 @@
 use crate::{
+    api::AppResult,
     app::AppState,
     common::{BasePageDTO, PageInfoData},
     entity::{prelude::SysUser, sys_user},
-    error::ApiResult,
-    query::Query,
+    enumeration::Gender,
+    error::{ApiError, ApiResult, ResponseErrorCode},
+    path::Path,
     response::AppResponse,
-    valid::{Valid, ValidQuery},
+    utils::id,
+    valid::{Valid, ValidJson, ValidPath, ValidQuery},
 };
 use anyhow::Context;
-use axum::{Router, debug_handler, extract::State, routing::get};
-use sea_orm::{
-    ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait,
+use axum::{
+    Router, debug_handler,
+    extract::State,
+    routing::{delete, get, post, put},
 };
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, EntityTrait, IntoActiveModel, PaginatorTrait, QueryFilter,
+    QueryOrder, QueryTrait, prelude::Date,
+};
+use sea_orm::{IntoActiveModel as _, prelude::*};
 use serde::Deserialize;
+use sys_user::ActiveModel;
 use validator::Validate;
-
 pub fn create_router() -> Router<AppState> {
-    Router::new().route("/users", get(get_users))
+    Router::new()
+        .route("/", get(get_users))
+        .route("/", post(add_user))
+        .route("/", put(update_user))
+        .route("/{id}", delete(delete_user))
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -29,6 +42,101 @@ pub struct UserQueryDTO {
     pagination: BasePageDTO,
 }
 
+#[derive(Debug, Deserialize, Validate)]
+pub struct UserUpdateDTO {
+    // not emepty
+    #[validate(length(min = 1, message = "id不能为空"))]
+    pub id: String,
+
+    #[validate(nested)]
+    #[serde(flatten)]
+    pub user: UserAddDTO,
+}
+#[derive(Debug, Deserialize, Validate, DeriveIntoActiveModel)]
+pub struct UserAddDTO {
+    #[validate(length(min = 2, max = 20, message = "用户名长度在2-20个字符之间"))]
+    pub username: String,
+
+    // #[validate(length(min = 1, max = 1))]
+    pub gender: Gender,
+
+    #[validate(length(min = 1, max = 20, message = "账号长度在6-20个字符之间"))]
+    pub account: String,
+
+    #[validate(length(min = 6, max = 20))]
+    pub password: String,
+
+    #[validate(custom(function = "crate::validation::is_mobile_phone"))]
+    pub mobile_phone: String,
+
+    pub birthday: Date,
+
+    pub enbaled: bool,
+}
+
+#[debug_handler]
+async fn add_user(
+    State(AppState { db }): State<AppState>,
+    ValidJson(dto): ValidJson<UserAddDTO>,
+) -> AppResult<()> {
+    let mut active_model = dto.into_active_model();
+    active_model.password = sea_orm::ActiveValue::Set(bcrypt::hash(
+        &active_model
+            .password
+            .take()
+            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DB_PWD_NOT_FIND))?,
+        bcrypt::DEFAULT_COST,
+    )?);
+    let _am = active_model.insert(&db).await?;
+    Ok(AppResponse::ok_whitok_no_data())
+}
+#[debug_handler]
+async fn update_user(
+    State(AppState { db }): State<AppState>,
+    ValidJson(dto): ValidJson<UserUpdateDTO>,
+) -> AppResult<()> {
+    let mut existed_user = SysUser::find_by_id(&dto.id)
+        .one(&db)
+        .await?
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
+    let old_password = existed_user.password.clone();
+    let password = dto.user.password.clone();
+    let mut existed_user_model = existed_user.into_active_model();
+
+    let mut active_model = dto.user.into_active_model();
+    existed_user_model.clone_from(&active_model);
+    // existed_user_model.id = ActiveValue::Unchanged(id);
+    if password.is_empty() {
+        active_model.password = ActiveValue::Unchanged(old_password);
+    } else {
+        let password_value = &active_model
+            .password
+            .take()
+            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DB_PWD_NOT_FIND))?;
+        existed_user_model.password =
+            ActiveValue::Set(bcrypt::hash(password_value, bcrypt::DEFAULT_COST)?);
+    }
+    let _ret = active_model.update(&db).await?;
+    Ok(AppResponse::ok_whitok_no_data())
+}
+
+#[debug_handler]
+async fn delete_user(
+    State(AppState { db }): State<AppState>,
+    Path(id): Path<String>,
+) -> AppResult<()> {
+    let existed_user = SysUser::find_by_id(&id)
+        .one(&db)
+        .await?
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
+    let result = existed_user.delete(&db).await?;
+    tracing::info!(
+        "delete user: {},affected rows: {}",
+        id,
+        result.rows_affected
+    );
+    Ok(AppResponse::ok_whitok_no_data())
+}
 #[debug_handler]
 async fn find_page(
     State(AppState { db }): State<AppState>,
@@ -36,7 +144,7 @@ async fn find_page(
         keyword,
         pagination,
     }): ValidQuery<UserQueryDTO>,
-) -> ApiResult<AppResponse<PageInfoData<sys_user::Model>>> {
+) -> AppResult<PageInfoData<sys_user::Model>> {
     let paginate = SysUser::find()
         .apply_if(keyword.as_ref(), |query, keyword| {
             query.filter(

@@ -7,6 +7,7 @@ use crate::{
 };
 
 mod user;
+pub type AppResult<T> = ApiResult<AppResponse<T>>;
 
 /// Create the router for the API.
 ///
