@@ -1,4 +1,4 @@
-use sea_orm::{ActiveValue::Set, entity::prelude::*, sqlx::types::chrono::Utc};
+use sea_orm::{ActiveValue::Set, entity::prelude::*};
 use serde::{Deserialize, Serialize};
 
 use crate::app::Gender;

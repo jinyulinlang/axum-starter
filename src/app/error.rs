@@ -38,6 +38,7 @@ pub enum ApiError {
     #[error("bcrypt error:{0}")]
     Bcrpt(#[from] bcrypt::BcryptError),
 }
+
 impl From<axum_valid::ValidRejection<ApiError>> for ApiError {
     fn from(rejection: axum_valid::ValidRejection<ApiError>) -> Self {
         match rejection {
@@ -48,6 +49,7 @@ impl From<axum_valid::ValidRejection<ApiError>> for ApiError {
         }
     }
 }
+
 impl ApiError {
     pub fn status_code(&self) -> StatusCode {
         match self {
@@ -105,19 +107,15 @@ macro_rules! define_error_codes {
                     $(Self::$variant => $msg,)*
                 }
             }
-
-            // Generate associated constants
-            $(
-                pub const $variant: Self = Self::$variant;
-            )*
         }
     };
 }
+
 define_error_codes! {
-     #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+    #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
     pub enum ResponseErrorCode {
-        FIND_NOT_USER(5001, "找不到用户"),
-        DB_PWD_NOT_FIND(5002, "数据库密码未找到")
+        FindNotUser(5001, "找不到用户"),
+        DbPwdNotFind(5002, "数据库密码未找到"),
         // Add more error codes as needed
     }
 }

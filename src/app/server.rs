@@ -4,16 +4,14 @@ use anyhow::Ok;
 use axum::{
     Router,
     extract::{DefaultBodyLimit, Request},
-    http::{StatusCode, method, request},
+    http::{StatusCode, method},
 };
 use bytesize::ByteSize;
-use sea_orm::prelude::Time;
 use tokio::net::TcpListener;
 use tower_http::{
-    cors::Any,
     normalize_path::NormalizePathLayer,
     timeout::TimeoutLayer,
-    trace::{self, DefaultOnResponse, TraceLayer},
+    trace::TraceLayer,
 };
 
 use crate::{app::AppState, app::latency::LatencyOnResponse, config::server::ServerConfig};

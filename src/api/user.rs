@@ -25,6 +25,7 @@ use sys_user::ActiveModel;
 use validator::Validate;
 pub fn create_router() -> Router<AppState> {
     Router::new()
+        .route("/pagination", post(find_page))
         .route("/", get(get_users))
         .route("/", post(add_user))
         .route("/", put(update_user))
@@ -83,7 +84,7 @@ async fn add_user(
         &active_model
             .password
             .take()
-            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DB_PWD_NOT_FIND))?,
+            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DbPwdNotFind))?,
         bcrypt::DEFAULT_COST,
     )?);
     let _am = active_model.insert(&db).await?;
@@ -97,7 +98,7 @@ async fn update_user(
     let existed_user = SysUser::find_by_id(&dto.id)
         .one(&db)
         .await?
-        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FIND_NOT_USER))?;
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
     let old_password = existed_user.password.clone();
     let password = dto.user.password.clone();
     let mut existed_user_model = existed_user.into_active_model();
@@ -111,7 +112,7 @@ async fn update_user(
         let password_value = &active_model
             .password
             .take()
-            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DB_PWD_NOT_FIND))?;
+            .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DbPwdNotFind))?;
         existed_user_model.password =
             ActiveValue::Set(bcrypt::hash(password_value, bcrypt::DEFAULT_COST)?);
     }
@@ -127,7 +128,7 @@ async fn delete_user(
     let existed_user = SysUser::find_by_id(&id)
         .one(&db)
         .await?
-        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FIND_NOT_USER))?;
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
     let result = existed_user.delete(&db).await?;
     tracing::info!(
         "delete user: {},affected rows: {}",
