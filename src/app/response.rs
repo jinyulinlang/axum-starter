@@ -1,7 +1,7 @@
 use axum::response::IntoResponse;
 use serde::{Deserialize, Serialize};
 
-use crate::error::ApiError;
+use crate::app::error::ApiError;
 
 const SUCESSS_CODE: i32 = 200;
 const SUCESSS_MESSAGE: &str = "success";

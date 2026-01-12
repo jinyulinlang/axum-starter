@@ -5,8 +5,7 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::response::AppResponse;
-pub type ApiResult<T> = Result<T, ApiError>;
+use crate::app::response::AppResponse;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
@@ -117,7 +116,7 @@ macro_rules! define_error_codes {
 define_error_codes! {
      #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
     pub enum ResponseErrorCode {
-        FindNotUser(5001, "找不到用户"),
+        FIND_NOT_USER(5001, "找不到用户"),
         DB_PWD_NOT_FIND(5002, "数据库密码未找到")
         // Add more error codes as needed
     }

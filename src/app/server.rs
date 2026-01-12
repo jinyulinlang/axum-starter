@@ -16,7 +16,7 @@ use tower_http::{
     trace::{self, DefaultOnResponse, TraceLayer},
 };
 
-use crate::{app::AppState, config::server::ServerConfig, latency::LatencyOnResponse};
+use crate::{app::AppState, app::latency::LatencyOnResponse, config::server::ServerConfig};
 pub struct Server {
     config: &'static ServerConfig,
 }

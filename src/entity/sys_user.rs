@@ -1,7 +1,7 @@
 use sea_orm::{ActiveValue::Set, entity::prelude::*, sqlx::types::chrono::Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::enumeration::Gender;
+use crate::app::Gender;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(schema_name = "public", table_name = "sys_user")]

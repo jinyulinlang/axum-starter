@@ -1,14 +1,13 @@
 use crate::{
-    api::AppResult,
+    app::AppResponse,
+    app::AppResult,
     app::AppState,
-    common::{BasePageDTO, PageInfoData},
+    app::Gender,
+    app::Path,
+    app::{ApiError, ApiResult, ResponseErrorCode},
+    app::{BasePageDTO, PageInfoData},
+    app::{ValidJson, ValidQuery},
     entity::{prelude::SysUser, sys_user},
-    enumeration::Gender,
-    error::{ApiError, ApiResult, ResponseErrorCode},
-    path::Path,
-    response::AppResponse,
-    utils::id,
-    valid::{Valid, ValidJson, ValidPath, ValidQuery},
 };
 use anyhow::Context;
 use axum::{
@@ -66,7 +65,7 @@ pub struct UserAddDTO {
     #[validate(length(min = 6, max = 20))]
     pub password: String,
 
-    #[validate(custom(function = "crate::validation::is_mobile_phone"))]
+    #[validate(custom(function = "crate::app::is_mobile_phone"))]
     pub mobile_phone: String,
 
     pub birthday: Date,
@@ -95,10 +94,10 @@ async fn update_user(
     State(AppState { db }): State<AppState>,
     ValidJson(dto): ValidJson<UserUpdateDTO>,
 ) -> AppResult<()> {
-    let mut existed_user = SysUser::find_by_id(&dto.id)
+    let existed_user = SysUser::find_by_id(&dto.id)
         .one(&db)
         .await?
-        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FIND_NOT_USER))?;
     let old_password = existed_user.password.clone();
     let password = dto.user.password.clone();
     let mut existed_user_model = existed_user.into_active_model();
@@ -128,7 +127,7 @@ async fn delete_user(
     let existed_user = SysUser::find_by_id(&id)
         .one(&db)
         .await?
-        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FindNotUser))?;
+        .ok_or_else(|| ApiError::Biz(ResponseErrorCode::FIND_NOT_USER))?;
     let result = existed_user.delete(&db).await?;
     tracing::info!(
         "delete user: {},affected rows: {}",

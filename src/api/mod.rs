@@ -1,13 +1,9 @@
-use axum::{Router, response::IntoResponse};
-
-use crate::{
-    app::AppState,
-    error::{ApiError, ApiResult},
-    response::AppResponse,
-};
-
 mod user;
-pub type AppResult<T> = ApiResult<AppResponse<T>>;
+
+use axum::Router;
+
+use crate::app::ApiResult;
+use crate::app::{ApiError, AppState};
 
 /// Create the router for the API.
 ///
@@ -25,6 +21,7 @@ async fn handler_not_found() -> ApiResult<()> {
     tracing::warn!("Not Found");
     Err(ApiError::NotFound)
 }
+
 async fn handler_method_not_allowed() -> ApiResult<()> {
     tracing::warn!("Method Not Allowed");
     Err(ApiError::MethodNotAllowed)

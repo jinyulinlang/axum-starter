@@ -4,11 +4,11 @@ use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, Sta
 use tracing::info;
 
 // Import your config getter (adjust the path as needed)
-use crate::config::get;
+// use crate::config::get;
 
 /** */
 pub async fn init() -> anyhow::Result<DatabaseConnection> {
-    let database_config = get().database();
+    let database_config = crate::config::get().database();
     let url = format!(
         "postgres://{}:{}@{}:{}/{}",
         database_config.username(),

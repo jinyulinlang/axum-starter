@@ -1,4 +1,4 @@
-use crate::error::ApiError;
+use crate::app::error::ApiError;
 use axum::extract::FromRequestParts;
 use axum_valid::HasValidate;
 
