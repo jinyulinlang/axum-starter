@@ -39,6 +39,7 @@ tower-http = { version = "0.6.8", features = [
   "limit",
   "cors",
   "normalize-path",
+  "auth",
 ] }
 xid = "1.1.1"
 bytesize = "2.3.1"

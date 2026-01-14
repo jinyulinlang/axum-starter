@@ -45,6 +45,7 @@ impl Default for JwtConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct JWT {
     encode_secret: EncodingKey,
     decode_secret: DecodingKey,

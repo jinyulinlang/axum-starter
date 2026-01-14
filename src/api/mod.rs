@@ -2,8 +2,8 @@ mod user;
 
 use axum::Router;
 
-use crate::app::ApiResult;
 use crate::app::{ApiError, AppState};
+use crate::app::{ApiResult, get_auth_layer};
 
 /// Create the router for the API.
 ///
@@ -13,6 +13,7 @@ use crate::app::{ApiError, AppState};
 pub fn create_router() -> Router<AppState> {
     Router::new()
         .nest("/api", Router::new().nest("/users", user::create_router()))
+        .route_layer(get_auth_layer())
         .fallback(handler_not_found)
         .method_not_allowed_fallback(handler_method_not_allowed)
 }

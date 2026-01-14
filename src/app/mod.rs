@@ -6,6 +6,7 @@ mod error;
 mod json;
 mod latency;
 mod logger;
+mod middleware;
 mod path;
 mod query;
 mod response;
@@ -25,6 +26,8 @@ pub use path::Path;
 pub use valid::ValidJson;
 pub use valid::ValidQuery;
 pub use validation::is_mobile_phone;
+
+pub use middleware::get_auth_layer;
 
 use axum::Router;
 use sea_orm::DatabaseConnection;

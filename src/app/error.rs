@@ -39,6 +39,9 @@ pub enum ApiError {
     Bcrpt(#[from] bcrypt::BcryptError),
     #[error("jwt error:{0}")]
     Jwt(#[from] jsonwebtoken::errors::Error),
+
+    #[error("unauthenticated:{0}")]
+    Unauthenticated(String),
 }
 
 impl From<axum_valid::ValidRejection<ApiError>> for ApiError {
@@ -65,7 +68,7 @@ impl ApiError {
             | ApiError::JsonError(_)
             | ApiError::ValidationError(_)
             | ApiError::Biz { .. } => StatusCode::BAD_REQUEST,
-            ApiError::Jwt(_) => StatusCode::UNAUTHORIZED,
+            ApiError::Jwt(_) | ApiError::Unauthenticated(_) => StatusCode::UNAUTHORIZED,
         }
     }
 }
