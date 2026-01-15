@@ -122,6 +122,7 @@ define_error_codes! {
     pub enum ResponseErrorCode {
         FindNotUser(5001, "找不到用户"),
         DbPwdNotFind(5002, "数据库密码未找到"),
+        UserNameOrPasswordError(5003, "用户名或密码错误"),
         // Add more error codes as needed
     }
 }

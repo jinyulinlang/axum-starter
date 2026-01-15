@@ -9,7 +9,7 @@ const DEFAULT_SECRET: &str = "1234567890";
 const DEFAULT_AUDIENCE: &str = "aduience";
 const DEFAULT_EXP: u64 = 60 * 60;
 const DEFAULT_ISSUER: &str = "issuer";
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Principal {
     pub id: String,
     pub username: String,

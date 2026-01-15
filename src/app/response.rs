@@ -14,7 +14,7 @@ pub struct AppResponse<T> {
 }
 
 impl<T> AppResponse<T> {
-    pub fn new(code: i32, data: Option<T>, message: String) -> Self {
+    fn new(code: i32, data: Option<T>, message: String) -> Self {
         Self {
             code,
             data,

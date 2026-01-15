@@ -1,13 +1,13 @@
 use crate::{
-    app::AppResponse,
-    app::AppResult,
-    app::AppState,
-    app::Gender,
-    app::Path,
-    app::{ApiError, ApiResult, ResponseErrorCode},
-    app::{BasePageDTO, PageInfoData},
-    app::{ValidJson, ValidQuery},
+    app::{
+        ApiError, ApiResult, AppResponse, AppResult, AppState, BasePageDTO, Gender, PageInfoData,
+        Path, ResponseErrorCode, ValidJson, ValidQuery,
+    },
     entity::{prelude::SysUser, sys_user},
+    utils::{
+        self,
+        crypt::{self, encode_password},
+    },
 };
 use anyhow::Context;
 use axum::{
@@ -80,12 +80,11 @@ async fn add_user(
     ValidJson(dto): ValidJson<UserAddDTO>,
 ) -> AppResult<()> {
     let mut active_model = dto.into_active_model();
-    active_model.password = sea_orm::ActiveValue::Set(bcrypt::hash(
+    active_model.password = sea_orm::ActiveValue::Set(encode_password(
         &active_model
             .password
             .take()
             .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DbPwdNotFind))?,
-        bcrypt::DEFAULT_COST,
     )?);
     let _am = active_model.insert(&db).await?;
     Ok(AppResponse::ok_whitok_no_data())
@@ -113,8 +112,7 @@ async fn update_user(
             .password
             .take()
             .ok_or_else(|| ApiError::Biz(ResponseErrorCode::DbPwdNotFind))?;
-        existed_user_model.password =
-            ActiveValue::Set(bcrypt::hash(password_value, bcrypt::DEFAULT_COST)?);
+        existed_user_model.password = ActiveValue::Set(encode_password(password_value)?);
     }
     let _ret = active_model.update(&db).await?;
     Ok(AppResponse::ok_whitok_no_data())

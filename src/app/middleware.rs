@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use std::{pin::Pin, sync::LazyLock};
 
 use axum::{
     body::Body,
@@ -17,6 +17,8 @@ use crate::app::{
     auth::{JWT, get_jwt},
     json::Json,
 };
+static AUTH_LAYER: LazyLock<AsyncRequireAuthorizationLayer<JWTAuth>> =
+    LazyLock::new(|| AsyncRequireAuthorizationLayer::new(JWTAuth { jwt: get_jwt() }));
 #[derive(Debug, Clone)]
 pub struct JWTAuth {
     pub jwt: &'static JWT,
@@ -78,6 +80,6 @@ impl From<ApiError> for Response {
         error.into_response()
     }
 }
-pub fn get_auth_layer() -> AsyncRequireAuthorizationLayer<JWTAuth> {
-    AsyncRequireAuthorizationLayer::new(JWTAuth::new(get_jwt()))
+pub fn get_auth_layer() -> &'static AsyncRequireAuthorizationLayer<JWTAuth> {
+    &AUTH_LAYER
 }

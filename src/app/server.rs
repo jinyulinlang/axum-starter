@@ -8,13 +8,12 @@ use axum::{
 };
 use bytesize::ByteSize;
 use tokio::net::TcpListener;
-use tower_http::{
-    normalize_path::NormalizePathLayer,
-    timeout::TimeoutLayer,
-    trace::TraceLayer,
-};
+use tower_http::{normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer};
 
-use crate::{app::AppState, app::latency::LatencyOnResponse, config::server::ServerConfig};
+use crate::{
+    app::{AppState, auth::Principal, latency::LatencyOnResponse},
+    config::server::ServerConfig,
+};
 pub struct Server {
     config: &'static ServerConfig,
 }
@@ -60,6 +59,11 @@ impl Server {
                 let method = request.method();
                 let path = request.uri().path();
                 let xid = xid::new();
+                // if let Some(principal) = request.extensions().get::<Principal>() {
+                //     tracing::info_span!("api request",trace_id = %xid, method=%method, user_id=%principal.id, path= %path)
+                // } else {
+
+                // }
                 tracing::info_span!("api request",trace_id = %xid, method=%method, path= %path)
             })
             .on_request(())
